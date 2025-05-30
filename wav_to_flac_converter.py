@@ -47,6 +47,14 @@ from typing import List, Tuple, Dict, Optional, Set
 from urllib.parse import quote
 from difflib import SequenceMatcher
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # This loads the .env file
+except ImportError:
+    # dotenv not installed, will fall back to system environment variables
+    pass
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -66,11 +74,11 @@ musicbrainzngs.set_useragent(
 )
 
 # AcoustID API key (free tier)
-ACOUSTID_API_KEY = "8XaBELgH"  # Free API key for testing
+ACOUSTID_API_KEY = os.getenv("ACOUSTID_API_KEY", "YOUR_ACOUSTID_API_KEY")  # Get from https://acoustid.org/api-key
 
 # Last.fm API configuration
-LASTFM_API_KEY = "4807c8565f0c063af9ee8ead0b2053bb"  # Get from https://www.last.fm/api
-LASTFM_API_SECRET = "d09395faeebdec244a55a61dd9a0f94a"  # Optional for read-only operations
+LASTFM_API_KEY = os.getenv("LASTFM_API_KEY", "YOUR_LASTFM_API_KEY")  # Get from https://www.last.fm/api
+LASTFM_API_SECRET = os.getenv("LASTFM_API_SECRET", "YOUR_LASTFM_SECRET")  # Optional for read-only operations
 
 class AdvancedMetadataLookup:
     """Advanced metadata lookup class with intelligent fallback strategies including audio fingerprinting."""
