@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wav-to-flac-converter"
+version = "2.3.0"
+description = "Convert WAV files to FLAC with optional metadata enhancement."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+license = { text = "MIT" }
+authors = [
+  { name = "Mike Gonzalez" }
+]
+keywords = ["audio", "flac", "wav", "musicbrainz", "acoustid", "metadata"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Sound/Audio :: Conversion"
+]
+dependencies = [
+  "pydub>=0.25.1",
+  "mutagen>=1.47.0",
+  "musicbrainzngs>=0.7.1",
+  "pyacoustid>=1.3.0",
+  "pylast>=5.0.0",
+  "python-dotenv>=1.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "black>=24.0.0",
+  "pytest>=8.0.0",
+  "ruff>=0.5.0"
+]
+
+[project.scripts]
+wav2flac = "wav2flac.app:main"
+
+[tool.setuptools]
+packages = ["wav2flac"]
+py-modules = ["wav_to_flac_converter"]
+
+[tool.black]
+line-length = 120
+target-version = ["py38"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --basetemp=.pytest-tmp"

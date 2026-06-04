@@ -1,5 +1,8 @@
 # Python
 __pycache__/
+.pytest_cache/
+.pytest-tmp/
+.ruff_cache/
 *.py[cod]
 *$py.class
 *.so
@@ -47,6 +50,7 @@ desktop.ini
 
 # Project specific
 *.log
+.metadata_cache.json
 ENHANCED_FLAC/
 converted_files/
 output/

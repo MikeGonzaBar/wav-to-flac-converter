@@ -26,22 +26,16 @@ After approval (usually instant), you'll get:
 
 ## ⚙️ **Configure the Enhanced Script**
 
-### **Option 1: Edit the Script** *(Recommended)*
+### **Option 1: Create a `.env` File** *(Recommended)*
 
-1. Open `wav_to_flac_converter_enhanced.py`
-2. Find these lines near the top:
+Copy `.env.example` to `.env` in the project folder:
 
-   ```python
-   LASTFM_API_KEY = "YOUR_LASTFM_API_KEY"
-   LASTFM_API_SECRET = "YOUR_LASTFM_SECRET"
-   ```
+```env
+LASTFM_API_KEY=your_key_here
+LASTFM_API_SECRET=your_secret_here
+```
 
-3. Replace with your actual keys:
-
-   ```python
-   LASTFM_API_KEY = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
-   LASTFM_API_SECRET = "your_secret_here"
-   ```
+The script loads `.env` automatically, and `.env` is ignored by Git.
 
 ### **Option 2: Environment Variables** *(Advanced)*
 
@@ -62,7 +56,7 @@ export LASTFM_API_SECRET=your_secret_here
 Run the enhanced script and check the logs:
 
 ```bash
-python wav_to_flac_converter_enhanced.py "test_folder" --fingerprinting
+python wav_to_flac_converter.py "test_folder"
 ```
 
 Look for:
@@ -122,7 +116,7 @@ Playcount: 15,420
 
 ### **"Last.fm API key not configured"**
 
-- Make sure you replaced `YOUR_LASTFM_API_KEY` with your actual key
+- Make sure `LASTFM_API_KEY` is set in `.env` or your shell
 - Check for typos in the API key
 
 ### **"pylast.WSError: Invalid API key"**
@@ -142,7 +136,7 @@ Playcount: 15,420
 
 ## 💡 **Tips for Best Results**
 
-1. **Use with fingerprinting**: `--fingerprinting` for maximum coverage
+1. **Use with fingerprinting**: configure `ACOUSTID_API_KEY`, or pass `--fingerprinting` for explicit fingerprint attempts
 2. **Check logs**: Monitor what each service finds
 3. **International artists**: Last.fm often has better coverage than MusicBrainz
 4. **Genre enhancement**: Last.fm adds community-generated genres

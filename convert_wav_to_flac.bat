@@ -12,18 +12,23 @@ echo  - Smart directory structure parsing
 echo.
 
 REM Check if Python is installed
-python --version >nul 2>&1
+set "BOOTSTRAP_PYTHON=python"
+%BOOTSTRAP_PYTHON% --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python is not installed or not in PATH
-    echo Please install Python from https://www.python.org/
-    pause
-    exit /b 1
+    set "BOOTSTRAP_PYTHON=py -3"
+    %BOOTSTRAP_PYTHON% --version >nul 2>&1
+    if errorlevel 1 (
+        echo ERROR: Python is not installed or not in PATH
+        echo Please install Python from https://www.python.org/
+        pause
+        exit /b 1
+    )
 )
 
 REM Check if virtual environment exists
 if not exist ".venv" (
     echo Creating virtual environment...
-    python -m venv .venv
+    %BOOTSTRAP_PYTHON% -m venv .venv
     if errorlevel 1 (
         echo ERROR: Failed to create virtual environment
         pause
@@ -34,15 +39,16 @@ if not exist ".venv" (
 REM Activate virtual environment
 echo Activating virtual environment...
 call .venv\Scripts\activate.bat
+set "PYTHON_CMD=python"
 
 REM Install/upgrade requirements
 echo Installing required packages...
-pip install -r requirements.txt --quiet
+%PYTHON_CMD% -m pip install -r requirements.txt --quiet
 if errorlevel 1 (
     echo ERROR: Failed to install required packages
     echo Trying to fix pip...
-    python -m ensurepip --upgrade
-    pip install -r requirements.txt
+    %PYTHON_CMD% -m ensurepip --upgrade
+    %PYTHON_CMD% -m pip install -r requirements.txt
     if errorlevel 1 (
         echo ERROR: Installation failed. Please check your internet connection.
         pause
@@ -71,7 +77,7 @@ if not exist "%source_path%" (
 
 echo.
 echo Select conversion quality:
-echo 1. High Quality (32-bit, compression level 12) - Best quality, larger files
+echo 1. High Quality (preserve source format, compression level 12)
 echo 2. Compatibility (16-bit, compression level 8) - Better device support
 echo.
 set /p quality="Enter your choice (1 or 2): "
@@ -97,6 +103,15 @@ if "%output_choice%"=="2" (
 )
 
 echo.
+echo Select existing output behavior:
+echo 1. Reuse existing files and update metadata - Safe default
+echo 2. Skip files that already have output
+echo 3. Overwrite existing output files
+echo 4. Dry run - Show planned actions only
+echo.
+set /p existing_behavior="Enter your choice (1, 2, 3, or 4): "
+
+echo.
 echo ================================================================================
 echo                            CONVERSION SETTINGS
 echo ================================================================================
@@ -104,23 +119,62 @@ echo Source Path: %source_path%
 echo Output Folder: %output_folder%
 
 REM Build command based on selections
-set command=python wav_to_flac_converter.py "%source_path%" --output "%output_folder%"
+set command=%PYTHON_CMD% wav_to_flac_converter.py "%source_path%" --output "%output_folder%"
 
 if "%quality%"=="2" (
     set command=%command% --compatibility
     echo Quality: Compatibility Mode (16-bit, level 8)
 ) else (
-    echo Quality: High Quality Mode (32-bit, level 12)
+    echo Quality: High Quality Mode (preserve source format, level 12)
 )
 
 if "%metadata%"=="2" (
-    set command=%command% --no-metadata
+    set command=%command% --basic-metadata
     echo Metadata: Directory Structure Only
 ) else if "%metadata%"=="3" (
     set command=%command% --no-metadata
     echo Metadata: Disabled
 ) else (
     echo Metadata: Enhanced Lookup with Smart Strategies
+)
+
+set is_dry_run=0
+if "%existing_behavior%"=="2" (
+    set command=%command% --skip-existing
+    echo Existing Output: Skip
+) else if "%existing_behavior%"=="3" (
+    set command=%command% --overwrite
+    echo Existing Output: Overwrite
+) else if "%existing_behavior%"=="4" (
+    set command=%command% --dry-run
+    set is_dry_run=1
+    echo Existing Output: Dry Run
+) else (
+    echo Existing Output: Reuse and update metadata
+)
+
+REM Check if FFmpeg is available; pydub needs it for actual FLAC export
+if "%is_dry_run%"=="0" (
+    where ffmpeg >nul 2>&1
+    if errorlevel 1 (
+        echo.
+        echo FFmpeg is not installed or not in PATH.
+        where choco >nul 2>&1
+        if errorlevel 1 (
+            echo Please install FFmpeg and add it to PATH, then run this script again.
+            echo Download: https://ffmpeg.org/download.html
+            pause
+            exit /b 1
+        )
+        echo Installing FFmpeg with Chocolatey...
+        choco install ffmpeg -y
+        if errorlevel 1 (
+            echo ERROR: Failed to install FFmpeg automatically.
+            echo Please install FFmpeg manually and add it to PATH.
+            pause
+            exit /b 1
+        )
+    )
 )
 
 echo.
@@ -176,4 +230,4 @@ if %exit_code%==0 (
 echo.
 echo Log file: conversion_enhanced.log
 echo.
-pause 
+pause

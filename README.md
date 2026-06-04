@@ -6,7 +6,7 @@ A sophisticated Python script that converts WAV files to high-quality FLAC forma
 
 ### 🎵 Audio Processing
 
-- **High-Quality Conversion**: WAV to FLAC with maximum compression (level 12) and 32-bit samples
+- **High-Quality Conversion**: WAV to FLAC with maximum compression (level 12) while preserving the source sample format
 - **Compatibility Mode**: Optional 16-bit/level 8 compression for better device support
 - **Smart FLAC Handling**: Processes existing FLAC files for metadata enhancement without re-conversion
 - **Structure Preservation**: Maintains original folder hierarchy in output
@@ -63,8 +63,11 @@ python -m venv .venv
 # Linux/Mac:
 source .venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install the app and dependencies
+pip install -e .
+
+# Optional developer tools
+pip install -e ".[dev]"
 ```
 
 ## 💻 Command Line Usage
@@ -75,11 +78,26 @@ pip install -r requirements.txt
 # Convert with enhanced metadata lookup
 python wav_to_flac_converter.py "C:\Music\WAV Files"
 
+# Or, after installing with pip:
+wav2flac "C:\Music\WAV Files"
+
 # Compatibility mode for older devices
 python wav_to_flac_converter.py "C:\Music" --compatibility
 
-# No metadata lookup at all
+# Directory/file-name metadata only; no online lookup
+python wav_to_flac_converter.py "C:\Music" --basic-metadata
+
+# No metadata embedding at all
 python wav_to_flac_converter.py "C:\Music" --no-metadata
+
+# Force audio fingerprinting for unknown tracks
+python wav_to_flac_converter.py "C:\Music" --fingerprinting
+
+# Preview planned work without writing files
+python wav_to_flac_converter.py "C:\Music" --dry-run
+
+# Use a custom persistent metadata cache
+python wav_to_flac_converter.py "C:\Music" --cache-file "C:\Music\metadata-cache.json"
 ```
 
 ### Command Line Options
@@ -90,10 +108,24 @@ positional arguments:
 
 optional arguments:
   -h, --help            Show help message
-  -o, --output OUTPUT   Output folder name (default: "FLAC CONVERTER")
+  --version             Show the installed version
+  -o, --output OUTPUT   Output folder/path; relative paths are created next to the source folder
   -c, --compatibility   Use 16-bit/level 8 for device compatibility
-  -n, --no-metadata     Disable automatic metadata lookup
+  -b, --basic-metadata  Use directory/file names only for metadata
+  -n, --no-metadata     Disable metadata embedding entirely
+  -a, --aggressive-metadata
+                        Use aggressive metadata search
+  -f, --fingerprinting  Force-enable audio fingerprinting
+  --no-fingerprinting   Disable audio fingerprinting
+  --overwrite           Replace existing output audio files
+  --skip-existing       Skip files whose output already exists
+  --dry-run             Show planned actions without writing files
+  --cache-file CACHE    Persistent metadata cache path
+  --no-cache            Disable persistent metadata caching
+  --log-file LOG        Conversion log file path
 ```
+
+Relative output paths are created next to the source folder. For example, `python wav_to_flac_converter.py "C:\Music"` writes to `C:\FLAC CONVERTER` by default. Existing output files are reused for metadata updates unless you pass `--overwrite`; pass `--skip-existing` to leave them untouched.
 
 ## 🔍 Metadata Lookup Strategies
 
@@ -175,6 +207,8 @@ CONVERSION SUMMARY
 Total files found:      500
 WAV files converted:    450
 FLAC files processed:   50
+Existing files reused:  0
+Existing files skipped: 0
 Failed conversions:     0
 
 METADATA SOURCES:
@@ -193,8 +227,8 @@ Success rate:           100.0%
 
 ### System Requirements
 
-- **Python 3.7+**
-- **FFmpeg** (installed automatically via batch file on Windows)
+- **Python 3.8 through 3.12** (`pydub 0.25.1` still depends on Python's removed `audioop` module in 3.13)
+- **FFmpeg** (the Windows batch file can install it automatically with Chocolatey when available)
 - **Internet connection** (for metadata lookup and fingerprinting)
 
 ### Python Dependencies
@@ -205,9 +239,31 @@ mutagen>=1.47.0
 musicbrainzngs>=0.7.1
 pyacoustid>=1.3.0
 pylast>=5.0.0
+python-dotenv>=1.0.0
+```
+
+### Development
+
+```bash
+pip install -e ".[dev]"
+python -m pytest
+python -m ruff check .
+python -m black --check .
 ```
 
 ## 🔧 Advanced Configuration
+
+### API Keys
+
+Copy `.env.example` to `.env` in the project folder to enable optional online providers:
+
+```env
+ACOUSTID_API_KEY=your_acoustid_key_here
+LASTFM_API_KEY=your_lastfm_key_here
+LASTFM_API_SECRET=your_lastfm_secret_here
+```
+
+When `ACOUSTID_API_KEY` is configured, enhanced metadata mode can use audio fingerprinting automatically. You can also pass `--fingerprinting` to force fingerprint attempts.
 
 ### Metadata Quality Levels
 
@@ -227,7 +283,7 @@ pylast>=5.0.0
 - **MusicBrainz Cache**: Stores API results to reduce repeated calls
 - **Album Cache**: Caches complete album tracklists
 - **Fingerprint Cache**: Stores fingerprint results for efficiency
-- **Automatic Cleanup**: Caches persist between runs for performance
+- **Persistent Cache**: Saves provider lookup results to `.metadata_cache.json` in the output folder by default
 
 ## 🚨 Troubleshooting
 
@@ -235,7 +291,7 @@ pylast>=5.0.0
 
 #### "ffmpeg not found"
 
-- **Windows**: Run the batch file - it installs FFmpeg automatically
+- **Windows**: Run the batch file - it checks for FFmpeg and can install it with Chocolatey
 - **Manual**: Download FFmpeg and add to PATH
 
 #### "No matches found via fingerprinting"
@@ -245,13 +301,13 @@ pylast>=5.0.0
 
 #### Internet connection issues
 
-- **Fingerprinting**: Requires internet; script will skip if offline
-- **MusicBrainz**: Also requires internet; use `--no-metadata` for offline conversion only
+- **Fingerprinting**: Requires internet and an AcoustID API key; the script skips it unless configured or forced with `--fingerprinting`
+- **MusicBrainz**: Also requires internet; use `--basic-metadata` or `--no-metadata` for offline conversion
 
 #### Generic filenames not being enhanced
 
 - **Check**: Ensure files match patterns (Track 01, 01 Track, etc.)
-- **Solution**: Use fingerprinting for unknown files
+- **Solution**: Configure an AcoustID API key and use fingerprinting for unknown files
 - **Alternative**: Rename files to include actual song titles
 
 ### Performance Tips
